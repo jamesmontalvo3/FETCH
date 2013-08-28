@@ -1,0 +1,16 @@
+{
+  "name": "FETCH Omnibox Extension",
+  "description" : "To use, type 'f', then space, then a search term into the Omnibox.",
+  "version": "0.1.3",
+  "manifest_version": 2,
+  "permissions" : [
+	"https://mod2.jsc.nasa.gov/",
+	"http://localhost/",
+	"tabs"
+  ],
+  "content_security_policy": "script-src 'self'; object-src 'self'",
+  "background": {
+    "page" : "background.html"
+  },
+  "omnibox": { "keyword" : "f" }
+}
