@@ -41,7 +41,7 @@ chrome.omnibox.onInputChanged.addListener(
 						content : cont,
 						description : desc
 					};
-					fetchLinks[data[i].label] = data[i].url;
+					fetchLinks[cont] = data[i].url;
 					
 				}
 				suggest(suggestions);
