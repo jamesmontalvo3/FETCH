@@ -68,6 +68,25 @@ class LinkSearch {
 	public function get_wiki_rows () {
 		global $default_wiki_info, $wiki_dbs;
 
+		// there is a better, cleaner way to do this...
+		$namespaces = array(
+			1 => "Talk",
+			2 => "User",
+			3 => "User_talk",
+			4 => "Project",
+			5 => "Project_talk",
+			6 => "File",
+			7 => "File_talk",
+			8 => "MediaWiki",
+			9 => "MediaWiki_talk",
+			10 => "Template",
+			11 => "Template_talk",
+			12 => "Help",
+			13 => "Help_talk",
+			14 => "Category",
+			15 => "Category_talk"
+		);
+		
 		$addrows = array();
 
 		foreach ($wiki_dbs as $wiki) {
@@ -87,7 +106,7 @@ class LinkSearch {
 			$this->full_string = strtoupper($this->full_string);
 			
 			$wikirows = $wiki_sql->exe("
-				SELECT page.page_title 
+				SELECT page.page_title,page.page_namespace 
 				FROM page, titlekey 
 				WHERE
 					titlekey.tk_key LIKE '%{$this->full_string}%'
@@ -97,10 +116,18 @@ class LinkSearch {
 			");
 			
 			foreach($wikirows as $row) {
+				
+				if($row['page_namespace'] > 0)
+					$ns = $namespaces[ $row['page_namespace'] ] . ":";
+				else
+					$ns = "";
+				$title = $ns . str_replace("_"," ",$row["page_title"]);
+				$url = $conf['wiki_http_root'] . "index.php?title=" . $ns . $row["page_title"];
+			
 				$addrows[] = array(
 					"id" => "wiki",
-					"title" => str_replace("_"," ",$row["page_title"]),
-					"url" => $conf['wiki_http_root'] . "index.php?title=" . $row["page_title"],
+					"title" => $title,
+					"url" => $url,
 					"source" => $conf['source']
 				);
 			}
