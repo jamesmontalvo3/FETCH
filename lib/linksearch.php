@@ -117,10 +117,13 @@ class LinkSearch {
 			
 			foreach($wikirows as $row) {
 				
-				if($row['page_namespace'] > 0)
+				if($row['page_namespace'] == 0)
+					$ns = "";
+				else if( isset($namespaces[$row['page_namespace']]) && $row['page_namespace'] > 0)
 					$ns = $namespaces[ $row['page_namespace'] ] . ":";
 				else
-					$ns = "";
+					continue;
+				
 				$title = $ns . str_replace("_"," ",$row["page_title"]);
 				$url = $conf['wiki_http_root'] . "index.php?title=" . $ns . $row["page_title"];
 			
