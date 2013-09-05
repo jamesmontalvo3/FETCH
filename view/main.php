@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<title>ETCH</title><!-- Per Brian Alpert, just write "ETCH", and the favicon will be the "F" -->
 		<?php require_once "html-head.php"; ?>
 	</head>
 	<body>

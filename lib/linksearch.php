@@ -18,46 +18,54 @@ class LinkSearch {
 	public function get_matching_items ($terms) {
 		global $fetch_db;
 
-		// number of links to send to client
-		$MAXROWS = 6;
-		
 		$this->full_string = $terms;
 		$terms = explode(" ", trim($terms) );		
 
 		$table = $fetch_db['links_table']; // from localsettings
+/*	
+
+=				// exact match					USE term full_string
+term %			// first word exact match		USE term full_string
+--> don't do for now... % term %		// whole word exact match		USE terms exploded
+[[:<:]]term		// start of any word			USE terms exploded
+  
+*/	
 		
-		$rows = $this->db->exe("
-			SELECT * 
+		// Exact match of title or keywords
+		$queries[] = "
+			SELECT *
 			FROM $table
-			WHERE title LIKE '%" . implode("%' AND title LIKE '%", $terms) . "%' 
-			LIMIT $MAXROWS
-		");
+			WHERE title='{$this->full_string}' OR keywords='{$this->full_string}'
+		";
+		
+		// First word exact match
+		// 		PROBLEM: if a first word is matched, then user types more words this case will be
+		// 		lost until they complete additional matching words
+		$queries[] = "
+			SELECT *
+			FROM $table
+			WHERE title LIKE '{$this->full_string} %' OR keywords LIKE '{$this->full_string} %'
+		";
 
-		$morerows = $MAXROWS - count($rows);
+		// each term must be in either title or keywords
+		$wheres = array();
+		foreach ($terms as $term) {
 			
-		if ($morerows > 0) {
-		
-			$existingIds = array();
-			foreach ($rows as $row)
-				$existingIds[] = $row['id'];
-		
-			#
-			# implode() below is used as a tricky way to create a list of keywords
-			# that ends up looking like:
-			# ... keywords LIKE '%term1%' AND keywords LIKE '%term2%' ...
-			#
-			$morerows = $this->db->exe("
-				SELECT * 
-				FROM $table
-				WHERE
-					keywords LIKE '%" . implode("%' AND keywords LIKE '%", $terms) . "%' 
-					AND id != '" . implode("' AND id != '", $existingIds) . "' 
-				LIMIT $morerows
-			");
-
-			$rows = array_merge($rows, $morerows);
-				
+			$wheres[] = "(title REGEXP '[[:<:]]$term' OR keywords REGEXP '[[:<:]]$term')";
+			
 		}
+		$wheres = implode(" AND ", $wheres);
+		
+		$queries[] = "
+			SELECT *
+			FROM $table
+			WHERE $wheres
+		";
+		
+		$limit = 5;
+		$query = implode(" UNION ", $queries) . " LIMIT $limit";
+		
+		$rows = $this->db->exe($query);
 		
 		$rows = array_merge($rows, $this->get_wiki_rows() );
 				
@@ -109,9 +117,11 @@ class LinkSearch {
 				SELECT page.page_title,page.page_namespace 
 				FROM page, titlekey 
 				WHERE
-					titlekey.tk_key LIKE '%{$this->full_string}%'
+					titlekey.tk_key LIKE '{$this->full_string}%'
 					AND 
 					page.page_id = titlekey.tk_page
+				ORDER BY
+					page.page_namespace ASC, page.page_title ASC
 				LIMIT 5
 			");
 			
